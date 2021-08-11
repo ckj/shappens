@@ -125,7 +125,7 @@ const characterBody = new CANNON.Body({
     mass: 1,
     position: new CANNON.Vec3(0, 3, 0),
     shape: sphereShape,
-    angularDamping: .9
+    angularDamping: .999
 })
 
 world.addBody(characterBody)
@@ -218,20 +218,17 @@ directionalLight.shadow.radius = 10
 
 
 // Input
-let jumping
+let jump
+let inAir
 let moveLeft
 let moveRight
-let topSpeed = 3;
-let jumpForce = 5;
-let lateralForce = 2;
+let topSpeed = 3
+let jumpForce = 5
+let lateralForce = 100
 
 const handleKeyDown=(keyEvent) => {
-    console.log(keyEvent);
-    if(jumping)return;
-    var validMove=true;
-
     if (keyEvent.key === " " || keyEvent.key === "ArrowUp" ) { //jump
-        jumping = true;
+        jump = true;
     } else if (keyEvent.key === "a" || keyEvent.key === "ArrowLeft" ) { // move left
         moveLeft = true;
     } else if (keyEvent.key === "d" || keyEvent.key === "ArrowRight" ) { // move right
@@ -240,6 +237,28 @@ const handleKeyDown=(keyEvent) => {
 }
 
 document.onkeydown = handleKeyDown;
+
+
+/**
+ * Collisions
+ *  */
+
+// Ground Detections
+
+world.addEventListener('endContact', (event) => {
+if (
+    (event.bodyA === floorBody && event.bodyB === characterBody) ||
+    (event.bodyB === floorBody && event.bodyA === characterBody)
+) {
+    inAir = true
+} 
+})
+
+characterBody.addEventListener('collide', (event) => {
+    if (event.body === floorBody) {
+        inAir = false
+    }
+  })
 
 
 // Controls
@@ -269,6 +288,7 @@ cannonDebugger(scene, world.bodies)
 
 const tick = () =>
 {
+    window.requestAnimationFrame(tick)
     const elapsedTime = clock.getElapsedTime()
     const deltaTime = elapsedTime - oldElapsedTime
     oldElapsedTime = elapsedTime
@@ -281,21 +301,23 @@ const tick = () =>
         character.position.z = characterBody.position.z
     }
     
-    if (jumping) {
-        characterBody.applyImpulse(new CANNON.Vec3(0, jumpForce, 0), new CANNON.Vec3(0, characterBody.position.x  ,0))
-        jumping = false;
+    if (jump) {
+        if(!inAir) {
+            characterBody.applyImpulse(new CANNON.Vec3(0, jumpForce, 0), new CANNON.Vec3(0, characterBody.position.x  ,0))
+            jump = false;
+        }
     }
 
     if (moveLeft) {
-        if(characterBody.velocity.x <= topSpeed) {
-            characterBody.applyImpulse(new CANNON.Vec3(lateralForce, 0, 0), characterBody.position)
+        if(!inAir && characterBody.velocity.x <= topSpeed) {
+            characterBody.applyForce(new CANNON.Vec3(lateralForce, 0, 0), characterBody.position)
             moveLeft = false;
         }
     }
 
     if (moveRight) {
-        if(characterBody.velocity.x >= -topSpeed) {
-            characterBody.applyImpulse(new CANNON.Vec3(-lateralForce, 0, 0), characterBody.position)
+        if(!inAir && characterBody.velocity.x >= -topSpeed) {
+            characterBody.applyForce(new CANNON.Vec3(-lateralForce, 0, 0), characterBody.position)
             moveRight = false;
         }
     }
@@ -304,6 +326,8 @@ const tick = () =>
 
     // Update controls
     controls.update()
+
+    console.log(inAir)
     
 
     renderer.render(scene, camera)
@@ -311,7 +335,7 @@ const tick = () =>
     mixer?.update(deltaTime)
 
     // Call tick again on the next frame
-    window.requestAnimationFrame(tick)
+    
 }
 
 tick()
