@@ -3,9 +3,9 @@ import * as dat from 'dat.gui'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
-import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js'
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js'
-import { BackSide } from 'three'
+import * as CANNON from 'cannon-es'
+import cannonDebugger from 'cannon-es-debugger'
 
 /**
  * Base
@@ -14,6 +14,9 @@ import { BackSide } from 'three'
 // const gui = new dat.GUI({
 //     width: 400
 // })
+
+let showDebug = false;
+
 
 // Canvas
 const canvas = document.querySelector('canvas.webgl')
@@ -58,20 +61,22 @@ const pyramidguyMaterial = new THREE.MeshBasicMaterial({ map: pyramidguyTexture 
  * Model
  */
 
-// Plane
 
-const planeGeometry = new THREE.PlaneGeometry( 15, 15 );
-const planeMaterial = new THREE.ShadowMaterial();
-planeMaterial.opacity = .3
-const plane = new THREE.Mesh( planeGeometry, planeMaterial );
-plane.rotation.x = Math.PI * -0.5
-plane.receiveShadow = true
+// Ground Plane
+const groundPlaneGeometry = new THREE.PlaneGeometry( 30, 30);
+const groundPlaneMaterial = new THREE.ShadowMaterial();
+groundPlaneMaterial.opacity = .3
+const groundPlane = new THREE.Mesh( groundPlaneGeometry, groundPlaneMaterial );
+groundPlane.rotation.x = Math.PI * -0.5
+groundPlane.position.y = 0
+groundPlane.receiveShadow = true
 
-scene.add( plane );
+scene.add( groundPlane );
 
 // Character
 
 let mixer
+let character
 
 gltfLoader.load(
     'ramid.glb', (gltf) =>
@@ -81,16 +86,89 @@ gltfLoader.load(
             child.castShadow = true
             child.receiveShadow = true
         })
+        character = gltf.scene
         const anim = new GLTFLoader()
         anim.load('run.glb', (anim) => {
             mixer = new THREE.AnimationMixer(gltf.scene.children[0])
             const run = mixer.clipAction(anim.animations[0])
             run.play();
-            console.log(run)
         })
         scene.add(gltf.scene)
     }
 )
+
+/** 
+ * Physics
+ */
+
+const world = new CANNON.World();
+world.gravity.set(0, -9.82, 0);
+
+// Physics materials
+const groundMaterial = new CANNON.Material('ground')
+const characterMaterial = new CANNON.Material('character')
+
+const groundCharacterContactMaterial = new CANNON.ContactMaterial(
+    groundMaterial,
+    characterMaterial,
+    {
+        friction: 0.5,
+        restitution: 0.1 
+    }
+)
+world.addContactMaterial(groundCharacterContactMaterial)
+
+// Sphere collider
+const sphereShape = new CANNON.Sphere(1)
+
+const characterBody = new CANNON.Body({
+    mass: 1,
+    position: new CANNON.Vec3(0, 3, 0),
+    shape: sphereShape,
+    angularDamping: .9
+})
+
+world.addBody(characterBody)
+
+// Floor
+
+const floorShape = new CANNON.Plane()
+const floorBody = new CANNON.Body()
+floorBody.mass = 0
+floorBody.addShape(floorShape)
+floorBody.quaternion.setFromAxisAngle(
+    new CANNON.Vec3(-1, 0, 0), Math.PI * .5
+)
+
+world.addBody(floorBody)
+
+
+// Right Wall
+
+const rightWallShape = new CANNON.Plane()
+const rightWallBody = new CANNON.Body()
+rightWallBody.mass = 0
+rightWallBody.addShape(rightWallShape)
+rightWallBody.position.x = -5
+rightWallBody.quaternion.setFromAxisAngle(
+    new CANNON.Vec3(0, 1, 0), Math.PI * .5
+)
+
+world.addBody(rightWallBody)
+
+// Left Wall
+
+const leftWallShape = new CANNON.Plane()
+const leftWallBody = new CANNON.Body()
+leftWallBody.mass = 0
+leftWallBody.addShape(leftWallShape)
+leftWallBody.position.x = 5
+leftWallBody.quaternion.setFromAxisAngle(
+    new CANNON.Vec3(0, -1, 0), Math.PI * .5
+)
+
+world.addBody(leftWallBody)
+
 
 /**
  * Sizes
@@ -138,6 +216,32 @@ directionalLight.shadow.mapSize.width = 1024 * 4
 directionalLight.shadow.mapSize.height = 1024 * 4
 directionalLight.shadow.radius = 10
 
+
+// Input
+let jumping
+let moveLeft
+let moveRight
+let topSpeed = 3;
+let jumpForce = 5;
+let lateralForce = 2;
+
+const handleKeyDown=(keyEvent) => {
+    console.log(keyEvent);
+    if(jumping)return;
+    var validMove=true;
+
+    if (keyEvent.key === " " || keyEvent.key === "ArrowUp" ) { //jump
+        jumping = true;
+    } else if (keyEvent.key === "a" || keyEvent.key === "ArrowLeft" ) { // move left
+        moveLeft = true;
+    } else if (keyEvent.key === "d" || keyEvent.key === "ArrowRight" ) { // move right
+        moveRight = true;
+    }
+}
+
+document.onkeydown = handleKeyDown;
+
+
 // Controls
 const controls = new OrbitControls(camera, canvas)
 controls.enableDamping = true
@@ -160,10 +264,43 @@ renderer.shadowMap.enabled = true
  * Animate
  */
 const clock = new THREE.Clock()
+let oldElapsedTime = 0
+cannonDebugger(scene, world.bodies)
 
 const tick = () =>
 {
-    const deltaSeconds = clock.getDelta()
+    const elapsedTime = clock.getElapsedTime()
+    const deltaTime = elapsedTime - oldElapsedTime
+    oldElapsedTime = elapsedTime
+
+    // Move Character
+    if (character) {
+
+        character.position.x = characterBody.position.x
+        character.position.y = characterBody.position.y - 1
+        character.position.z = characterBody.position.z
+    }
+    
+    if (jumping) {
+        characterBody.applyImpulse(new CANNON.Vec3(0, jumpForce, 0), new CANNON.Vec3(0, characterBody.position.x  ,0))
+        jumping = false;
+    }
+
+    if (moveLeft) {
+        if(characterBody.velocity.x <= topSpeed) {
+            characterBody.applyImpulse(new CANNON.Vec3(lateralForce, 0, 0), characterBody.position)
+            moveLeft = false;
+        }
+    }
+
+    if (moveRight) {
+        if(characterBody.velocity.x >= -topSpeed) {
+            characterBody.applyImpulse(new CANNON.Vec3(-lateralForce, 0, 0), characterBody.position)
+            moveRight = false;
+        }
+    }
+    
+    world.step(1 / 60, deltaTime, 3)
 
     // Update controls
     controls.update()
@@ -171,13 +308,10 @@ const tick = () =>
 
     renderer.render(scene, camera)
 
-    mixer?.update(deltaSeconds)
+    mixer?.update(deltaTime)
 
     // Call tick again on the next frame
     window.requestAnimationFrame(tick)
-
-    
-    
 }
 
 tick()
