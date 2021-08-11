@@ -14,3 +14,33 @@ npm run dev
 # Build for production in the dist/ directory
 npm run build
 ```
+
+## Todos
+
+#### Obstacles
+
+- [x] Poo
+- [ ] Barricade
+- [x] Caution cone
+- [ ] Hot dog?
+- [ ] Placement
+- [ ] Collision
+
+#### Animations
+
+- [ ] Jump
+- [ ] Idle (start screen)
+- [ ] Eating
+- [ ] Loading/playing multiple animations
+
+#### UI
+
+- [ ] Logo
+- [ ] Score
+- [ ] Controls
+
+#### Gameplay
+
+- [ ] Start screen
+- [ ] End screen
+- [ ] Restart
