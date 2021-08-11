@@ -11,11 +11,21 @@ import cannonDebugger from 'cannon-es-debugger'
  * Base
  */
 // Debug
-// const gui = new dat.GUI({
-//     width: 400
-// })
+const gui = new dat.GUI({
+    width: 400
+})
+const debugObject = {}
 
 let showDebug = false;
+let jump
+let inAir
+let moveLeft
+let moveRight
+let topSpeed = 3
+let jumpForce = 4.5
+let lateralForce = 100
+let courseWidth = 6
+let characterSpeed = 6
 
 
 // Canvas
@@ -23,6 +33,12 @@ const canvas = document.querySelector('canvas.webgl')
 
 // Scene
 const scene = new THREE.Scene()
+{
+    const near = 10;
+    const far = 20;
+    const color = '#ff9663';
+    scene.fog = new THREE.Fog(color, near, far);
+  }
 
 /**
  * Loaders
@@ -55,15 +71,13 @@ pyramidguyTexture.encoding = THREE.sRGBEncoding
 
 const pyramidguyMaterial = new THREE.MeshBasicMaterial({ map: pyramidguyTexture })
 
-
-
 /**
- * Model
+ * Models
  */
 
 
 // Ground Plane
-const groundPlaneGeometry = new THREE.PlaneGeometry( 30, 30);
+const groundPlaneGeometry = new THREE.PlaneGeometry(30, 30);
 const groundPlaneMaterial = new THREE.ShadowMaterial();
 groundPlaneMaterial.opacity = .3
 const groundPlane = new THREE.Mesh( groundPlaneGeometry, groundPlaneMaterial );
@@ -123,7 +137,7 @@ const sphereShape = new CANNON.Sphere(1)
 
 const characterBody = new CANNON.Body({
     mass: 1,
-    position: new CANNON.Vec3(0, 3, 0),
+    position: new CANNON.Vec3(0, 1, 0),
     shape: sphereShape,
     angularDamping: .999
 })
@@ -142,14 +156,13 @@ floorBody.quaternion.setFromAxisAngle(
 
 world.addBody(floorBody)
 
-
 // Right Wall
 
 const rightWallShape = new CANNON.Plane()
 const rightWallBody = new CANNON.Body()
 rightWallBody.mass = 0
 rightWallBody.addShape(rightWallShape)
-rightWallBody.position.x = -5
+rightWallBody.position.x = -(courseWidth/2)
 rightWallBody.quaternion.setFromAxisAngle(
     new CANNON.Vec3(0, 1, 0), Math.PI * .5
 )
@@ -162,13 +175,65 @@ const leftWallShape = new CANNON.Plane()
 const leftWallBody = new CANNON.Body()
 leftWallBody.mass = 0
 leftWallBody.addShape(leftWallShape)
-leftWallBody.position.x = 5
+leftWallBody.position.x = (courseWidth/2)
 leftWallBody.quaternion.setFromAxisAngle(
     new CANNON.Vec3(0, -1, 0), Math.PI * .5
 )
 
 world.addBody(leftWallBody)
 
+/**
+ * Obstacles
+ */
+
+// Create poo
+
+const boxGeometry = new THREE.BoxGeometry(1, 1, 1)
+const boxMaterial = new THREE.MeshStandardMaterial({
+    metalness: 0.3,
+    roughness: 0.4,
+})
+
+const objectsToUpdate = []
+
+const createPoo = (position) =>
+{
+    // Three.js mesh
+    const size = .1;
+    const mesh = new THREE.Mesh(boxGeometry, boxMaterial)
+    mesh.scale.set(size, size, size)
+    mesh.castShadow = true
+    mesh.position.copy(position)
+    scene.add(mesh)
+
+    // Cannon.js body
+    const shape = new CANNON.Box(new CANNON.Vec3(size * 0.5, size * 0.5, size * 0.5))
+
+    const body = new CANNON.Body({
+        mass: 1,
+        position: new CANNON.Vec3(0, 3, 0),
+        shape: shape,
+    })
+    body.position.copy(position)
+    world.addBody(body)
+
+    // Save in objects
+    objectsToUpdate.push({ mesh, body })
+}
+
+createPoo({ x: 0, y: 3, z: 0 })
+
+debugObject.createPoo = () =>
+{
+    createPoo(
+        {
+            x: (Math.random() - 0.5) * 3,
+            y: 3,
+            z: (Math.random() - 0.5) * 3
+        }
+    )
+}
+gui.add(debugObject, 'createPoo')
 
 /**
  * Sizes
@@ -197,10 +262,13 @@ window.addEventListener('resize', () =>
  * Camera
  */
 // Base camera
-const camera = new THREE.PerspectiveCamera(50, sizes.width / sizes.height, 0.1, 100)
-camera.position.x = 3
-camera.position.y = 3
-camera.position.z = 4
+const camera = new THREE.PerspectiveCamera(70, sizes.width / sizes.height, 0.1, 100)
+camera.position.x = 0
+camera.position.y = 1
+camera.position.z = -3.5
+
+camera.rotation.y = Math.PI * 1
+
 scene.add(camera)
 
 
@@ -210,7 +278,7 @@ scene.add(camera)
 
 const directionalLight = new THREE.DirectionalLight(0xffffff, .3)
 scene.add(directionalLight)
-directionalLight.position.set(1, 1, .75)
+directionalLight.position.set(5, 5, 4)
 directionalLight.castShadow = true
 directionalLight.shadow.mapSize.width = 1024 * 4
 directionalLight.shadow.mapSize.height = 1024 * 4
@@ -218,13 +286,6 @@ directionalLight.shadow.radius = 10
 
 
 // Input
-let jump
-let inAir
-let moveLeft
-let moveRight
-let topSpeed = 3
-let jumpForce = 5
-let lateralForce = 100
 
 const handleKeyDown=(keyEvent) => {
     if (keyEvent.key === " " || keyEvent.key === "ArrowUp" ) { //jump
@@ -262,13 +323,46 @@ characterBody.addEventListener('collide', (event) => {
 
 
 // Controls
-const controls = new OrbitControls(camera, canvas)
-controls.enableDamping = true
-controls.target.y = 1
+// const controls = new OrbitControls(camera, canvas)
+// controls.enableDamping = true
+// controls.target.y = 1
+
+/**
+ * Utils
+ */
+
+ const followPlayer = () => {
+    if (character) {
+        characterBody.velocity.z = characterSpeed;
+        character.position.x = characterBody.position.x
+        character.position.y = characterBody.position.y - 1
+        character.position.z = characterBody.position.z
+
+        groundPlane.position.z = characterBody.position.z
+        camera.position.z = characterBody.position.z - 3
+
+        directionalLight.position.z = characterBody.position.z + 2
+        directionalLight.target = character
+
+        console.log(groundPlane)
+    }
+ }
+
+ const createObstacles = () => {
+    // Every x units, generate and randomly place poo and other obstacles
+
+    createPoo({x: 5, y: 0, z: characterBody.position.z + 30})
+
+    console.log("creating poo")
+ }
+
+ const destroyObstacles = () => {
+     // if obstacles are 10 units behind player, destroy them
+ }
 
 /**
  * Renderer
- */
+ */ 
 const renderer = new THREE.WebGLRenderer({
     canvas: canvas,
     antialias: true
@@ -288,18 +382,16 @@ cannonDebugger(scene, world.bodies)
 
 const tick = () =>
 {
-    window.requestAnimationFrame(tick)
     const elapsedTime = clock.getElapsedTime()
     const deltaTime = elapsedTime - oldElapsedTime
     oldElapsedTime = elapsedTime
 
     // Move Character
-    if (character) {
+    
+    followPlayer()
+    // createObstacles()
 
-        character.position.x = characterBody.position.x
-        character.position.y = characterBody.position.y - 1
-        character.position.z = characterBody.position.z
-    }
+    console.log(elapsedTime);
     
     if (jump) {
         if(!inAir) {
@@ -321,14 +413,19 @@ const tick = () =>
             moveRight = false;
         }
     }
-    
-    world.step(1 / 60, deltaTime, 3)
 
     // Update controls
-    controls.update()
+    // controls.update()
+
+    window.requestAnimationFrame(tick)
+    world.step(1 / 60, deltaTime, 3)
+
+    for(const object of objectsToUpdate)
+    {
+        object.mesh.position.copy(object.body.position)
+    }
 
     console.log(inAir)
-    
 
     renderer.render(scene, camera)
 
