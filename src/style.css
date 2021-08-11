@@ -1,19 +1,66 @@
-*
-{
-    margin: 0;
-    padding: 0;
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
 html,
-body
-{
-    overflow: hidden;
+body {
+  overflow: hidden;
+  min-height: 100%;
 }
 
-.webgl
-{
-    position: fixed;
-    top: 0;
-    left: 0;
-    outline: none;
+body {
+    overflow: hidden;
+    background-image: linear-gradient(to top, #f794a4 15%, #fcc6a4 100%);
+  }
+
+.webgl {
+  position: fixed;
+  top: 0;
+  left: 0;
+  outline: none;
+}
+
+#loading-screen {
+  position: absolute;
+  z-index: 2;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #f794a4;
+  opacity: 1;
+  transition: 1s opacity;
+}
+
+#loading-screen.fade-out {
+  opacity: 0;
+}
+
+.loading-container {
+  width: 300px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  margin-left: -150px;
+  margin-top: -8px;
+}
+
+.progress-bar-container {
+  height: 8px;
+  position: relative;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.2);
+  overflow: hidden;
+}
+
+#progress-bar {
+  position: absolute;
+  background: #fff;
+  top: 0px;
+  bottom: 0px;
+  left: 0;
+  border-radius: 1px;
+  transition: 1s width;
 }

@@ -56,17 +56,42 @@ function init() {
   clock = new THREE.Clock()
 
   /**
+   * Loading screen
+   */
+
+  const loadingManager = new THREE.LoadingManager(() => {
+    const loadingScreen = document.getElementById('loading-screen')
+
+    // optional: remove loader from DOM via event listener
+    // loadingScreen.addEventListener( 'transitionend', onTransitionEnd );
+
+    setTimeout(function () {
+      loadingScreen.classList.add('fade-out')
+    }, 3000)
+  })
+
+  loadingManager.onProgress = (url, itemsLoaded, itemsTotal) => {
+      const progress = itemsLoaded/itemsTotal * 100
+
+      document.getElementById("progress-bar").style.width=progress + "%";
+
+    console.log(
+      console.log(progress)
+    )
+  }
+
+  /**
    * Loaders
    */
   // Texture loader
-  const textureLoader = new THREE.TextureLoader()
+  const textureLoader = new THREE.TextureLoader(loadingManager)
 
   // Draco loader
   const dracoLoader = new DRACOLoader()
   dracoLoader.setDecoderPath('draco/')
 
   // GLTF loader
-  const gltfLoader = new GLTFLoader()
+  const gltfLoader = new GLTFLoader(loadingManager)
   gltfLoader.setDRACOLoader(dracoLoader)
 
   // Shader
@@ -287,11 +312,11 @@ function init() {
   renderer = new THREE.WebGLRenderer({
     canvas: canvas,
     antialias: true,
+    alpha: true
   })
   renderer.setSize(sizes.width, sizes.height)
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
   renderer.outputEncoding = THREE.sRGBEncoding
-  renderer.setClearColor(0xff9663, 1)
   renderer.shadowMap.enabled = true
 
   debugObject.createPoo = () => {
@@ -375,7 +400,6 @@ function render() {
   mixer?.update(deltaTime)
 
   renderer.render(scene, camera)
-
 }
 
 /**
