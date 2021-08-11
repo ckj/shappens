@@ -9,7 +9,7 @@ import cannonDebugger from 'cannon-es-debugger'
 /**
  * Base
  */
-// Debug
+
 const gui = new dat.GUI({
   width: 400,
 })
@@ -161,6 +161,7 @@ function init() {
       child.castShadow = true
       child.receiveShadow = true
     })
+    poo = gltf.scene;
     gltf.scene.position.x = 2
     scene.add(gltf.scene)
   })
@@ -408,39 +409,43 @@ function render() {
 
 // Create poo
 
-const createPoo = (position) => {
-  const boxGeometry = new THREE.BoxGeometry(1, 1, 1)
-  const boxMaterial = new THREE.MeshStandardMaterial({
-    metalness: 0.3,
-    roughness: 0.4,
-  })
+// const createPoo = (position) => {
+//   const boxGeometry = new THREE.BoxGeometry(1, 1, 1)
+//   const boxMaterial = new THREE.MeshStandardMaterial({
+//     metalness: 0.3,
+//     roughness: 0.4,
+//   })
 
-  // Three.js mesh
-  const size = 0.1
-  const mesh = new THREE.Mesh(boxGeometry, boxMaterial)
-  mesh.scale.set(size, size, size)
-  mesh.castShadow = true
-  mesh.position.copy(position)
-  scene.add(character)
+//   // Three.js mesh
+//   const size = 0.1
+//   const mesh = new THREE.Mesh(boxGeometry, boxMaterial)
+//   mesh.scale.set(size, size, size)
+//   mesh.castShadow = true
+//   mesh.position.copy(position)
+//   scene.add(character)
 
-  // Cannon.js body
-  const shape = new CANNON.Box(
-    new CANNON.Vec3(size * 0.5, size * 0.5, size * 0.5)
-  )
+//   // Cannon.js body
+//   const shape = new CANNON.Box(
+//     new CANNON.Vec3(size * 0.5, size * 0.5, size * 0.5)
+//   )
 
-  const body = new CANNON.Body({
-    mass: 1,
-    position: new CANNON.Vec3(0, 3, 0),
-    shape: shape,
-  })
-  body.position.copy(position)
-  world.addBody(body)
+//   const body = new CANNON.Body({
+//     mass: 1,
+//     position: new CANNON.Vec3(0, 3, 0),
+//     shape: shape,
+//   })
+//   body.position.copy(position)
+//   world.addBody(body)
 
-  // Save in objects
-  objectsToUpdate.push({ mesh, body })
-}
+//   // Save in objects
+//   objectsToUpdate.push({ mesh, body })
+// }
 
 // createPoo({ x: 0, y: 3, z: 0 })
+
+const createPoo = (position) => {
+
+}
 
 // Input
 
@@ -476,6 +481,9 @@ function followPlayer() {
 
     directionalLight.position.z = characterBody.position.z + 20
     directionalLight.target = character
+
+    // Update scoreboard
+    document.getElementById("score").innerText = String(Math.round(characterBody.position.z)).padStart(3, '0');;
   }
 }
 

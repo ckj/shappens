@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap');
+
 * {
   margin: 0;
   padding: 0;
@@ -11,9 +13,11 @@ body {
 }
 
 body {
-    overflow: hidden;
-    background-image: linear-gradient(to top, #f794a4 15%, #fcc6a4 100%);
-  }
+  overflow: hidden;
+  background-image: linear-gradient(to top, #f794a4 15%, #fcc6a4 100%);
+  font-family: 'Fredoka One', sans-serif;
+  color: #fff;
+}
 
 .webgl {
   position: fixed;
@@ -63,4 +67,22 @@ body {
   left: 0;
   border-radius: 1px;
   transition: 1s width;
+}
+
+#scoreboard {
+  width: 300px;
+  position: absolute;
+  top: 20px ;
+  left: 50%;
+  margin-left: -150px;
+  font-size: 120px;
+  text-shadow: 0 10px 20px rgba(0,0,0, .05);
+  text-align: center;
+  line-height: .85;
+  z-index: -1 ;
+}
+
+#scoreboard span {
+    font-size: 14px;
+    font-family: sans-serif;
 }
