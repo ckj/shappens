@@ -15,7 +15,7 @@ const gui = new dat.GUI({
 })
 const debugObject = {}
 
-let clock,
+let clock = new THREE.Clock(),
   scene,
   canvas,
   camera,
@@ -23,6 +23,7 @@ let clock,
   directionalLight,
   renderer,
   mixer,
+  last = 0,
   characterBody,
   groundPlane,
   objectsToUpdate = [],
@@ -47,13 +48,11 @@ function init() {
   canvas = document.querySelector('canvas.webgl')
   scene = new THREE.Scene()
   {
-    const near = 10
-    const far = 20
-    const color = '#ff9663'
+    const near = 8
+    const far = 16
+    const color = '#f9a5a4'
     scene.fog = new THREE.Fog(color, near, far)
   }
-
-  clock = new THREE.Clock()
 
   /**
    * Loading screen
@@ -71,13 +70,11 @@ function init() {
   })
 
   loadingManager.onProgress = (url, itemsLoaded, itemsTotal) => {
-      const progress = itemsLoaded/itemsTotal * 100
+    const progress = (itemsLoaded / itemsTotal) * 100
 
-      document.getElementById("progress-bar").style.width=progress + "%";
+    document.getElementById('progress-bar').style.width = progress + '%'
 
-    console.log(
-      console.log(progress)
-    )
+    console.log(console.log(progress))
   }
 
   /**
@@ -161,9 +158,9 @@ function init() {
       child.castShadow = true
       child.receiveShadow = true
     })
-    poo = gltf.scene;
-    gltf.scene.position.x = 2
-    scene.add(gltf.scene)
+    poo = gltf.scene.children[1]
+    poo.position.x = 2
+    scene.add(poo)
   })
 
   gltfLoader.load('cone.glb', (gltf) => {
@@ -172,6 +169,7 @@ function init() {
       child.castShadow = true
       child.receiveShadow = true
     })
+    cone = gltf.scene
     gltf.scene.position.x = -2
     scene.add(gltf.scene)
   })
@@ -198,7 +196,7 @@ function init() {
   world.addContactMaterial(groundCharacterContactMaterial)
 
   // Sphere collider
-  const sphereShape = new CANNON.Sphere(1)
+  const sphereShape = new CANNON.Sphere(0.25)
 
   characterBody = new CANNON.Body({
     mass: 1,
@@ -269,6 +267,9 @@ function init() {
     if (event.body === floorBody) {
       inAir = false
     }
+    if (event.body.name === 'Poo') {
+      console.log('You really stepped in it this time')
+    }
   })
 
   /** Debugger */
@@ -313,7 +314,7 @@ function init() {
   renderer = new THREE.WebGLRenderer({
     canvas: canvas,
     antialias: true,
-    alpha: true
+    alpha: true,
   })
   renderer.setSize(sizes.width, sizes.height)
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
@@ -344,20 +345,18 @@ function init() {
   })
 }
 
-function animate() {
+function animate(now) {
   requestAnimationFrame(animate)
-  render()
+  render(now)
 }
 
-function render() {
+function render(now) {
   const elapsedTime = clock.getElapsedTime()
   const deltaTime = elapsedTime - oldElapsedTime
   oldElapsedTime = elapsedTime
 
   // Move Character
-
-  followPlayer()
-  // createObstacles()
+  followPlayer(now)
 
   if (jump) {
     if (!inAir) {
@@ -394,9 +393,22 @@ function render() {
 
   world.step(1 / 60)
 
-  for (const object of objectsToUpdate) {
-    object.mesh.position.copy(object.body.position)
-  }
+  objectsToUpdate.forEach((object, index) => {
+    if (object.clone.name === 'Poo') {
+      object.clone.position.copy(object.body.position)
+      object.clone.position.y = object.body.position.y - 0.14
+    } else {
+      object.clone.position.copy(object.body.position)
+    }
+    if (object.body.position.z < characterBody.position.z - 10) {
+      console.log('body is out of sight')
+      scene.remove(object.clone)
+      world.removeBody(object.body)
+      objectsToUpdate.splice(index, 1)
+    }
+
+    console.log(objectsToUpdate)
+  })
 
   mixer?.update(deltaTime)
 
@@ -407,44 +419,35 @@ function render() {
  * Obstacles
  */
 
-// Create poo
-
-// const createPoo = (position) => {
-//   const boxGeometry = new THREE.BoxGeometry(1, 1, 1)
-//   const boxMaterial = new THREE.MeshStandardMaterial({
-//     metalness: 0.3,
-//     roughness: 0.4,
-//   })
-
-//   // Three.js mesh
-//   const size = 0.1
-//   const mesh = new THREE.Mesh(boxGeometry, boxMaterial)
-//   mesh.scale.set(size, size, size)
-//   mesh.castShadow = true
-//   mesh.position.copy(position)
-//   scene.add(character)
-
-//   // Cannon.js body
-//   const shape = new CANNON.Box(
-//     new CANNON.Vec3(size * 0.5, size * 0.5, size * 0.5)
-//   )
-
-//   const body = new CANNON.Body({
-//     mass: 1,
-//     position: new CANNON.Vec3(0, 3, 0),
-//     shape: shape,
-//   })
-//   body.position.copy(position)
-//   world.addBody(body)
-
-//   // Save in objects
-//   objectsToUpdate.push({ mesh, body })
-// }
-
-// createPoo({ x: 0, y: 3, z: 0 })
-
 const createPoo = (position) => {
+  const size = 0.25
+  const clone = poo.clone()
+  clone.position.set(getPlacement(), 0, characterBody.position.z + 12)
+  console.log(clone.geometry.boundingBox)
+  scene.add(clone)
 
+  // Cannon body
+  const shape = new CANNON.Box(
+    new CANNON.Vec3(size * 0.5, size * 0.5, size * 0.5)
+  )
+
+  const body = new CANNON.Body({
+    mass: 0.1,
+    position: new CANNON.Vec3(0, 0, 0),
+    shape: shape,
+    type: CANNON.Body.KINEMATIC,
+  })
+  body.position.copy(clone.position)
+  world.addBody(body)
+
+  // Save in objects
+  objectsToUpdate.push({ clone, body })
+}
+
+const getPlacement = () => {
+  const min = -2
+  const max = 2
+  return Math.random() * (max - min) + min
 }
 
 // Input
@@ -469,11 +472,11 @@ document.onkeydown = handleKeyDown
  * Utils
  */
 
-function followPlayer() {
+function followPlayer(now) {
   if (character) {
-    // characterBody.velocity.z = characterSpeed
+    characterBody.velocity.z = characterSpeed
     character.position.x = characterBody.position.x
-    character.position.y = characterBody.position.y - 1
+    character.position.y = characterBody.position.y - 0.25
     character.position.z = characterBody.position.z
 
     groundPlane.position.z = characterBody.position.z
@@ -482,28 +485,30 @@ function followPlayer() {
     directionalLight.position.z = characterBody.position.z + 20
     directionalLight.target = character
 
+    // Spawn obstacles
+    if (!last || now - last >= 1 * 1000) {
+      last = now
+      createPoo()
+    }
+
     // Update scoreboard
-    document.getElementById("score").innerText = String(Math.round(characterBody.position.z)).padStart(3, '0');;
+    document.getElementById('score').innerText = String(
+      Math.round(characterBody.position.z)
+    ).padStart(3, '0')
   }
 }
 
 const createObstacles = () => {
   // Every x units, generate and randomly place poo and other obstacles
-
   // [   *   * * ]
   // [ * *     * ]
   // [ *     * * ]
   // [ * *   *   ]
   // [ *   *   * ]
   // [   *   * * ]
-
   // 1. Create a pool of objects (poo, caution cones, barricades, ramps)
   // 2. Add 1-2 per row, spaced randomly
   // 3. randomize rotation, size
-
-  createPoo({ x: 5, y: 0, z: characterBody.position.z + 30 })
-
-  console.log('creating poo')
 }
 
 const destroyObstacles = () => {

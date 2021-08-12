@@ -36,7 +36,7 @@ npm run build
 #### UI
 
 - [ ] Logo
-- [ ] Score
+- [x] Score
 - [ ] Controls
 
 #### Gameplay

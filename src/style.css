@@ -84,5 +84,10 @@ body {
 
 #scoreboard span {
     font-size: 14px;
+    font-weight: 600;
     font-family: sans-serif;
+}
+
+.dg.ac {
+    z-index: 5 !important;
 }
