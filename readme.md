@@ -28,7 +28,7 @@ npm run build
 
 #### Animations
 
-- [ ] Jump
+- [x] Jump
 - [x] Idle (start screen)
 - [x] Loading/playing multiple animations
 
@@ -40,13 +40,14 @@ npm run build
 
 #### Gameplay
 
-- [ ] Start screen
+- [x] Start screen
 - [ ] End screen
 - [ ] Restart
 
 #### Stretch
 
-- [ ] Leaderboard
-- [ ] Power ups
 - [ ] Foot colliders
+- [ ] Leaderboard
+- [ ] Mobile
+- [ ] Power ups
 

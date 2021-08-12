@@ -265,7 +265,7 @@ function init() {
         (event.bodyB === floorBody && event.bodyA === characterBody)
       ) {
         inAir = true
-        blendAnim(idleAnim)
+        blendAnim(jumpAnim)
       }
     }
   })
@@ -274,7 +274,7 @@ function init() {
     if (start) {
       if (event.body === floorBody) {
         inAir = false
-        blendAnim(runAnim)
+        blendAnim(runAnim, .1)
       }
       if (event.body.name === 'poo') {
         endGame()
@@ -480,13 +480,13 @@ document.onkeydown = handleKeyDown
 
 let lastAnim
 
-function blendAnim(anim) {
+function blendAnim(anim, transitionTime = 0.25) {
   anim.time = 0.0
   anim.enabled = true
   anim.setEffectiveTimeScale(1.0)
   anim.setEffectiveWeight(1.0)
   anim.reset()
-  lastAnim && anim.crossFadeFrom(lastAnim, 0.25, true)
+  lastAnim && anim.crossFadeFrom(lastAnim, transitionTime, true)
   anim.play()
   lastAnim = anim
 }
