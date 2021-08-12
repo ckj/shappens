@@ -29,9 +29,8 @@ npm run build
 #### Animations
 
 - [ ] Jump
-- [ ] Idle (start screen)
-- [ ] Eating
-- [ ] Loading/playing multiple animations
+- [x] Idle (start screen)
+- [x] Loading/playing multiple animations
 
 #### UI
 
@@ -44,3 +43,10 @@ npm run build
 - [ ] Start screen
 - [ ] End screen
 - [ ] Restart
+
+#### Stretch
+
+- [ ] Leaderboard
+- [ ] Power ups
+- [ ] Foot colliders
+

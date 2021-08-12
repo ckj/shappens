@@ -36,6 +36,9 @@ let clock = new THREE.Clock(),
   moveLeft,
   moveRight,
   character,
+  runAnim,
+  idleAnim,
+  jumpAnim,
   poo,
   cone,
   topSpeed = 3,
@@ -141,11 +144,12 @@ function init() {
       child.receiveShadow = true
     })
     character = gltf.scene
-    const anim = new GLTFLoader()
-    anim.load('run.glb', (anim) => {
+
+    gltfLoader.load('animations.glb', (anim) => {
+      console.log(anim)
       mixer = new THREE.AnimationMixer(gltf.scene.children[0])
-      const run = mixer.clipAction(anim.animations[0])
-      run.play()
+      runAnim = mixer.clipAction(anim.animations[1])
+      idleAnim = mixer.clipAction(anim.animations[0])
     })
     scene.add(gltf.scene)
   })
@@ -156,7 +160,7 @@ function init() {
       child.castShadow = true
       child.receiveShadow = true
     })
-    poo = gltf.scene.children[1]
+    poo = gltf.scene
   })
 
   gltfLoader.load('cone.glb', (gltf) => {
@@ -413,7 +417,7 @@ function render(now) {
  * Obstacles
  */
 
-const createPoo = (position) => {
+const createPoo = () => {
   const size = 0.25
   const clone = poo.clone()
   clone.position.set(getPlacement(), 0, characterBody.position.z + 12)
@@ -447,15 +451,17 @@ const getPlacement = () => {
 // Input
 
 const handleKeyDown = (keyEvent) => {
-  if (keyEvent.key === ' ' || keyEvent.key === 'ArrowUp') {
-    //jump
-    jump = true
-  } else if (keyEvent.key === 'a' || keyEvent.key === 'ArrowLeft') {
-    // move left
-    moveLeft = true
-  } else if (keyEvent.key === 'd' || keyEvent.key === 'ArrowRight') {
-    // move right
-    moveRight = true
+  if (!gameover) {
+    if (keyEvent.key === ' ' || keyEvent.key === 'ArrowUp') {
+      //jump
+      jump = true
+    } else if (keyEvent.key === 'a' || keyEvent.key === 'ArrowLeft') {
+      // move left
+      moveLeft = true
+    } else if (keyEvent.key === 'd' || keyEvent.key === 'ArrowRight') {
+      // move right
+      moveRight = true
+    }
   }
 }
 
@@ -465,7 +471,17 @@ document.onkeydown = handleKeyDown
  * Utils
  */
 
+function blendAnim(prev, next) {
+  next.time = 0.0
+  next.enabled = true
+  next.setEffectiveTimeScale(1.0)
+  next.setEffectiveWeight(1.0)
+  next.crossFadeFrom(prev, 0.25, true)
+  next.play()
+}
+
 function startGame() {
+  blendAnim(runAnim, idleAnim)
   character.position.set(0, 0, 0)
   characterBody.wakeUp()
   characterBody.position.set(0, 0, 0)
@@ -479,6 +495,7 @@ function startGame() {
       document.getElementById('score').innerText = 'Go!'
       setTimeout(function () {
         start = true
+        blendAnim(idleAnim, runAnim)
       }, 1000)
     }, 1000)
   }, 1000)
