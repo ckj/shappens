@@ -23,8 +23,8 @@ npm run build
 - [ ] Barricade
 - [x] Caution cone
 - [ ] Hot dog?
-- [ ] Placement
-- [ ] Collision
+- [x] Placement
+- [x] Collision
 
 #### Animations
 

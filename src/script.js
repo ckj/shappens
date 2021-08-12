@@ -24,6 +24,9 @@ let clock = new THREE.Clock(),
   renderer,
   mixer,
   last = 0,
+  loaded,
+  gameover,
+  start,
   characterBody,
   groundPlane,
   objectsToUpdate = [],
@@ -60,21 +63,16 @@ function init() {
 
   const loadingManager = new THREE.LoadingManager(() => {
     const loadingScreen = document.getElementById('loading-screen')
-
-    // optional: remove loader from DOM via event listener
-    // loadingScreen.addEventListener( 'transitionend', onTransitionEnd );
-
     setTimeout(function () {
       loadingScreen.classList.add('fade-out')
-    }, 3000)
+      loaded = true
+      startGame()
+    }, 1000)
   })
 
   loadingManager.onProgress = (url, itemsLoaded, itemsTotal) => {
     const progress = (itemsLoaded / itemsTotal) * 100
-
     document.getElementById('progress-bar').style.width = progress + '%'
-
-    console.log(console.log(progress))
   }
 
   /**
@@ -159,8 +157,6 @@ function init() {
       child.receiveShadow = true
     })
     poo = gltf.scene.children[1]
-    poo.position.x = 2
-    scene.add(poo)
   })
 
   gltfLoader.load('cone.glb', (gltf) => {
@@ -170,8 +166,11 @@ function init() {
       child.receiveShadow = true
     })
     cone = gltf.scene
-    gltf.scene.position.x = -2
+    gltf.scene.position.x = -1
     scene.add(gltf.scene)
+    const clone = cone.clone()
+    clone.position.x = 1
+    scene.add(clone)
   })
 
   /**
@@ -267,14 +266,10 @@ function init() {
     if (event.body === floorBody) {
       inAir = false
     }
-    if (event.body.name === 'Poo') {
-      console.log('You really stepped in it this time')
+    if (event.body.name === 'poo') {
+      endGame()
     }
   })
-
-  /** Debugger */
-
-  cannonDebugger(scene, world.bodies)
 
   /**
    * Lights
@@ -322,13 +317,15 @@ function init() {
   renderer.shadowMap.enabled = true
 
   debugObject.createPoo = () => {
-    createPoo({
-      x: (Math.random() - 0.5) * 3,
-      y: 3,
-      z: (Math.random() - 0.5) * 3,
-    })
+    createPoo()
   }
+
+  debugObject.showBodies = () => {
+    cannonDebugger(scene, world.bodies)
+  }
+
   gui.add(debugObject, 'createPoo')
+  gui.add(debugObject, 'showBodies')
 
   window.addEventListener('resize', () => {
     // Update sizes
@@ -351,6 +348,7 @@ function animate(now) {
 }
 
 function render(now) {
+  if (gameover) return
   const elapsedTime = clock.getElapsedTime()
   const deltaTime = elapsedTime - oldElapsedTime
   oldElapsedTime = elapsedTime
@@ -401,17 +399,13 @@ function render(now) {
       object.clone.position.copy(object.body.position)
     }
     if (object.body.position.z < characterBody.position.z - 10) {
-      console.log('body is out of sight')
       scene.remove(object.clone)
       world.removeBody(object.body)
       objectsToUpdate.splice(index, 1)
     }
-
-    console.log(objectsToUpdate)
   })
 
   mixer?.update(deltaTime)
-
   renderer.render(scene, camera)
 }
 
@@ -423,7 +417,6 @@ const createPoo = (position) => {
   const size = 0.25
   const clone = poo.clone()
   clone.position.set(getPlacement(), 0, characterBody.position.z + 12)
-  console.log(clone.geometry.boundingBox)
   scene.add(clone)
 
   // Cannon body
@@ -437,6 +430,7 @@ const createPoo = (position) => {
     shape: shape,
     type: CANNON.Body.KINEMATIC,
   })
+  body.name = 'poo'
   body.position.copy(clone.position)
   world.addBody(body)
 
@@ -445,15 +439,14 @@ const createPoo = (position) => {
 }
 
 const getPlacement = () => {
-  const min = -2
-  const max = 2
+  const min = -3
+  const max = 3
   return Math.random() * (max - min) + min
 }
 
 // Input
 
 const handleKeyDown = (keyEvent) => {
-  console.log('keydown')
   if (keyEvent.key === ' ' || keyEvent.key === 'ArrowUp') {
     //jump
     jump = true
@@ -472,8 +465,49 @@ document.onkeydown = handleKeyDown
  * Utils
  */
 
+function startGame() {
+  character.position.set(0, 0, 0)
+  characterBody.wakeUp()
+  characterBody.position.set(0, 0, 0)
+  camera.position.z = -3
+
+  document.getElementById('score').innerText = 'Ready'
+
+  setTimeout(function () {
+    document.getElementById('score').innerText = 'Set'
+    setTimeout(function () {
+      document.getElementById('score').innerText = 'Go!'
+      setTimeout(function () {
+        start = true
+      }, 1000)
+    }, 1000)
+  }, 1000)
+}
+
+function endGame() {
+  console.log('You really stepped in it this time')
+  gameover = true
+  characterBody.sleep()
+  setTimeout(function () {
+    resetGame()
+    startGame()
+  }, 3000)
+}
+
+function resetGame() {
+  gameover = false
+  start = false
+
+  objectsToUpdate.forEach((object, index) => {
+    scene.remove(object.clone)
+    world.removeBody(object.body)
+  })
+
+  objectsToUpdate = []
+}
+
 function followPlayer(now) {
-  if (character) {
+  if (character && start) {
     characterBody.velocity.z = characterSpeed
     character.position.x = characterBody.position.x
     character.position.y = characterBody.position.y - 0.25
@@ -486,7 +520,7 @@ function followPlayer(now) {
     directionalLight.target = character
 
     // Spawn obstacles
-    if (!last || now - last >= 1 * 1000) {
+    if (!last || now - last >= 1 * 250) {
       last = now
       createPoo()
     }
@@ -496,21 +530,4 @@ function followPlayer(now) {
       Math.round(characterBody.position.z)
     ).padStart(3, '0')
   }
-}
-
-const createObstacles = () => {
-  // Every x units, generate and randomly place poo and other obstacles
-  // [   *   * * ]
-  // [ * *     * ]
-  // [ *     * * ]
-  // [ * *   *   ]
-  // [ *   *   * ]
-  // [   *   * * ]
-  // 1. Create a pool of objects (poo, caution cones, barricades, ramps)
-  // 2. Add 1-2 per row, spaced randomly
-  // 3. randomize rotation, size
-}
-
-const destroyObstacles = () => {
-  // if obstacles are 10 units behind player, destroy them
 }
