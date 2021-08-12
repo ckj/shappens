@@ -28,7 +28,13 @@ let clock = new THREE.Clock(),
   gameover,
   start,
   characterBody,
+  leftFootBody,
+  rightFootBody,
   groundPlane,
+  leftFoot,
+  rightFoot,
+  leftFootTarget = new THREE.Vector3(),
+  rightFootTarget = new THREE.Vector3(),
   objectsToUpdate = [],
   oldElapsedTime,
   jump,
@@ -161,6 +167,7 @@ function init() {
       child.castShadow = true
       child.receiveShadow = true
     })
+    gltf.scene.name = 'Poo'
     poo = gltf.scene
   })
 
@@ -204,17 +211,48 @@ function init() {
 
   characterBody = new CANNON.Body({
     mass: 1,
-    position: new CANNON.Vec3(0, 1, 0),
+    position: new CANNON.Vec3(0, 0, 0),
     shape: sphereShape,
     angularDamping: 0.999,
+    collisionFilterGroup: 2,
+    collisionFilterMask: 1,
   })
 
   world.addBody(characterBody)
 
+  // Foot colliders
+  const footBoxShape = new CANNON.Box(new CANNON.Vec3(0.075, 0.075, 0.125))
+
+  leftFootBody = new CANNON.Body({
+    mass: 0,
+    position: new CANNON.Vec3(0, 0, 0),
+    shape: footBoxShape,
+    angularDamping: 1,
+    collisionFilterGroup: 4,
+    collisionFilterMask: 8,
+    name: 'foot',
+  })
+
+  world.addBody(leftFootBody)
+
+  rightFootBody = new CANNON.Body({
+    mass: 0,
+    position: new CANNON.Vec3(0, 0, 0),
+    shape: footBoxShape,
+    angularDamping: 1,
+    collisionFilterGroup: 4,
+    collisionFilterMask: 8,
+    name: 'foot',
+  })
+
+  world.addBody(rightFootBody)
+
   // Floor
 
   const floorShape = new CANNON.Plane()
-  const floorBody = new CANNON.Body()
+  const floorBody = new CANNON.Body({
+    collisionFilterGroup: 1,
+  })
   floorBody.mass = 0
   floorBody.addShape(floorShape)
   floorBody.quaternion.setFromAxisAngle(
@@ -227,7 +265,9 @@ function init() {
   // Right Wall
 
   const rightWallShape = new CANNON.Plane()
-  const rightWallBody = new CANNON.Body()
+  const rightWallBody = new CANNON.Body({
+    collisionFilterGroup: 1,
+  })
   rightWallBody.mass = 0
   rightWallBody.addShape(rightWallShape)
   rightWallBody.position.x = -(courseWidth / 2)
@@ -241,7 +281,9 @@ function init() {
   // Left Wall
 
   const leftWallShape = new CANNON.Plane()
-  const leftWallBody = new CANNON.Body()
+  const leftWallBody = new CANNON.Body({
+    collisionFilterGroup: 1,
+  })
   leftWallBody.mass = 0
   leftWallBody.addShape(leftWallShape)
   leftWallBody.position.x = courseWidth / 2
@@ -271,14 +313,27 @@ function init() {
   })
 
   characterBody.addEventListener('collide', (event) => {
+    console.log(event.body)
     if (start) {
       if (event.body === floorBody) {
         inAir = false
-        blendAnim(runAnim, .1)
+        blendAnim(runAnim, 0.1)
       }
-      if (event.body.name === 'poo') {
+      if (event.body.name === 'foot') {
         endGame()
       }
+    }
+  })
+
+  rightFootBody.addEventListener('collide', (event) => {
+    if (start && event.body.name === 'poo') {
+      endGame()
+    }
+  })
+
+  leftFootBody.addEventListener('collide', (event) => {
+    if (start && event.body.name === 'poo') {
+      endGame()
     }
   })
 
@@ -437,12 +492,14 @@ const createPoo = () => {
 
   const body = new CANNON.Body({
     mass: 0.1,
-    position: new CANNON.Vec3(0, 0, 0),
+    position: new CANNON.Vec3(0, 1, 0),
     shape: shape,
-    type: CANNON.Body.KINEMATIC,
+    collisionFilterGroup: 8,
+    collisionFilterMask: 1 | 4, // Only collide with ground and feet
   })
   body.name = 'poo'
   body.position.copy(clone.position)
+  body.position.y = clone.position.y * 2
   world.addBody(body)
 
   // Save in objects
@@ -536,6 +593,26 @@ function resetGame() {
 
 function followPlayer(now) {
   if (character && start) {
+    leftFoot = character.children[0].children[6].children[0]
+    rightFoot = character.children[0].children[2].children[0]
+
+    const leftFootPosition = leftFoot.getWorldPosition(leftFootTarget)
+    const rightFootPosition = rightFoot.getWorldPosition(rightFootTarget)
+
+    console.log()
+
+    leftFootBody.position.set(
+      leftFootPosition.x,
+      leftFootPosition.y + 0.05,
+      leftFootPosition.z
+    )
+
+    rightFootBody.position.set(
+      rightFootPosition.x,
+      rightFootPosition.y + 0.05,
+      rightFootPosition.z
+    )
+
     characterBody.velocity.z = characterSpeed
     character.position.x = characterBody.position.x
     character.position.y = characterBody.position.y - 0.25
