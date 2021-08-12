@@ -148,8 +148,9 @@ function init() {
     gltfLoader.load('animations.glb', (anim) => {
       console.log(anim)
       mixer = new THREE.AnimationMixer(gltf.scene.children[0])
-      runAnim = mixer.clipAction(anim.animations[1])
-      idleAnim = mixer.clipAction(anim.animations[0])
+      runAnim = mixer.clipAction(anim.animations[2])
+      idleAnim = mixer.clipAction(anim.animations[1])
+      jumpAnim = mixer.clipAction(anim.animations[0])
     })
     scene.add(gltf.scene)
   })
@@ -258,20 +259,26 @@ function init() {
   // Ground Detections
 
   world.addEventListener('endContact', (event) => {
-    if (
-      (event.bodyA === floorBody && event.bodyB === characterBody) ||
-      (event.bodyB === floorBody && event.bodyA === characterBody)
-    ) {
-      inAir = true
+    if (start) {
+      if (
+        (event.bodyA === floorBody && event.bodyB === characterBody) ||
+        (event.bodyB === floorBody && event.bodyA === characterBody)
+      ) {
+        inAir = true
+        blendAnim(idleAnim)
+      }
     }
   })
 
   characterBody.addEventListener('collide', (event) => {
-    if (event.body === floorBody) {
-      inAir = false
-    }
-    if (event.body.name === 'poo') {
-      endGame()
+    if (start) {
+      if (event.body === floorBody) {
+        inAir = false
+        blendAnim(runAnim)
+      }
+      if (event.body.name === 'poo') {
+        endGame()
+      }
     }
   })
 
@@ -471,17 +478,21 @@ document.onkeydown = handleKeyDown
  * Utils
  */
 
-function blendAnim(prev, next) {
-  next.time = 0.0
-  next.enabled = true
-  next.setEffectiveTimeScale(1.0)
-  next.setEffectiveWeight(1.0)
-  next.crossFadeFrom(prev, 0.25, true)
-  next.play()
+let lastAnim
+
+function blendAnim(anim) {
+  anim.time = 0.0
+  anim.enabled = true
+  anim.setEffectiveTimeScale(1.0)
+  anim.setEffectiveWeight(1.0)
+  anim.reset()
+  lastAnim && anim.crossFadeFrom(lastAnim, 0.25, true)
+  anim.play()
+  lastAnim = anim
 }
 
 function startGame() {
-  blendAnim(runAnim, idleAnim)
+  blendAnim(idleAnim)
   character.position.set(0, 0, 0)
   characterBody.wakeUp()
   characterBody.position.set(0, 0, 0)
@@ -495,7 +506,7 @@ function startGame() {
       document.getElementById('score').innerText = 'Go!'
       setTimeout(function () {
         start = true
-        blendAnim(idleAnim, runAnim)
+        blendAnim(runAnim)
       }, 1000)
     }, 1000)
   }, 1000)
