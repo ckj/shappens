@@ -1,4 +1,5 @@
-# Shit Happens
+# Shappens
+
 
 ## Setup
 
@@ -40,7 +41,7 @@ npm run build
 
 - [x] Start screen
 - [ ] End screen
-- [ ] Restart
+- [x] Restart
 
 #### Stretch
 
@@ -49,14 +50,8 @@ npm run build
 - [ ] Impact Markers
 - [x] Mobile
 - [ ] Leaderboard
-- [ ] Sound
+- [x] Sound
 - [ ] Power ups
-
-#### Demo
-
-- [ ] QR Code
-- [ ] Basic script
-- [ ] Video
 
 
 
