@@ -560,6 +560,9 @@ const handleKeyDown = (keyEvent) => {
     } else if (keyEvent.key === 'd' || keyEvent.key === 'ArrowRight') {
       // move right
       moveRight = true
+    } else if (keyEvent.key === '`') {
+      cannonDebugger(scene, world.bodies)
+      sideview = true
     }
   }
 }
