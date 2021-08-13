@@ -1,8 +1,6 @@
-# Three.js Journey
+# Shit Happens
 
 ## Setup
-Download [Node.js](https://nodejs.org/en/download/).
-Run this followed commands:
 
 ``` bash
 # Install dependencies (only the first time)
@@ -46,8 +44,10 @@ npm run build
 
 #### Stretch
 
-- [ ] Foot colliders
-- [ ] Leaderboard
+- [x] Foot colliders
+- [ ] Web workers
+- [ ] Impact Markers
 - [ ] Mobile
+- [ ] Leaderboard
 - [ ] Power ups
 

@@ -4,6 +4,7 @@ import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js'
 import * as CANNON from 'cannon-es'
+import Hammer from 'hammerjs'
 import cannonDebugger from 'cannon-es-debugger'
 
 /**
@@ -27,6 +28,7 @@ let clock = new THREE.Clock(),
   loaded,
   gameover,
   start,
+  sideview,
   characterBody,
   leftFootBody,
   rightFootBody,
@@ -55,6 +57,9 @@ let clock = new THREE.Clock(),
 
 init()
 animate()
+
+let body = document.querySelector('body')
+let gesture = Hammer(body)
 
 function init() {
   canvas = document.querySelector('canvas.webgl')
@@ -148,6 +153,7 @@ function init() {
       child.material = pyramidguyMaterial
       child.castShadow = true
       child.receiveShadow = true
+      child.frustumCulled = false
     })
     character = gltf.scene
 
@@ -191,6 +197,7 @@ function init() {
 
   world = new CANNON.World()
   world.gravity.set(0, -9.82, 0)
+  world.broadphase = new CANNON.SAPBroadphase(world)
 
   // Physics materials
   const groundMaterial = new CANNON.Material('ground')
@@ -221,7 +228,7 @@ function init() {
   world.addBody(characterBody)
 
   // Foot colliders
-  const footBoxShape = new CANNON.Box(new CANNON.Vec3(0.075, 0.075, 0.125))
+  const footBoxShape = new CANNON.Box(new CANNON.Vec3(0.06, 0.075, 0.1))
 
   leftFootBody = new CANNON.Body({
     mass: 0,
@@ -359,7 +366,7 @@ function init() {
   }
 
   // Base camera
-  camera = new THREE.PerspectiveCamera(70, sizes.width / sizes.height, 0.1, 100)
+  camera = new THREE.PerspectiveCamera(70, sizes.width / sizes.height, 0.1, 50)
   camera.position.x = 0
   camera.position.y = 1
   camera.position.z = -3.5
@@ -390,8 +397,13 @@ function init() {
     cannonDebugger(scene, world.bodies)
   }
 
+  debugObject.toggleSideview = () => {
+    sideview = !sideview
+  }
+
   gui.add(debugObject, 'createPoo')
   gui.add(debugObject, 'showBodies')
+  gui.add(debugObject, 'toggleSideview')
 
   window.addEventListener('resize', () => {
     // Update sizes
@@ -512,7 +524,11 @@ const getPlacement = () => {
   return Math.random() * (max - min) + min
 }
 
-// Input
+/**
+ * Input
+ */
+
+// Keyboard Input
 
 const handleKeyDown = (keyEvent) => {
   if (!gameover) {
@@ -530,6 +546,22 @@ const handleKeyDown = (keyEvent) => {
 }
 
 document.onkeydown = handleKeyDown
+
+// Mobile Input
+
+gesture.on('panleft panright panup tap press', function (ev) {
+  if (!gameover) {
+    if (ev.type === 'tap') {
+      jump = true
+    }
+    if (ev.type === 'panleft') {
+      moveLeft = true
+    }
+    if (ev.type === 'panright') {
+      moveRight = true
+    }
+  }
+})
 
 /**
  * Utils
@@ -593,13 +625,11 @@ function resetGame() {
 
 function followPlayer(now) {
   if (character && start) {
-    leftFoot = character.children[0].children[6].children[0]
-    rightFoot = character.children[0].children[2].children[0]
+    leftFoot = character.children[0].children[6].children[0].children[0]
+    rightFoot = character.children[0].children[2].children[0].children[0]
 
     const leftFootPosition = leftFoot.getWorldPosition(leftFootTarget)
     const rightFootPosition = rightFoot.getWorldPosition(rightFootTarget)
-
-    console.log()
 
     leftFootBody.position.set(
       leftFootPosition.x,
@@ -623,6 +653,15 @@ function followPlayer(now) {
 
     directionalLight.position.z = characterBody.position.z + 20
     directionalLight.target = character
+
+    // Sideview
+
+    if (sideview) {
+      camera.position.x = -2
+      camera.position.z = characterBody.position.z
+      camera.position.y = 0
+      camera.rotation.y = Math.PI * -0.5
+    }
 
     // Spawn obstacles
     if (!last || now - last >= 1 * 250) {
