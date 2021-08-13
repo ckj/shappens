@@ -52,3 +52,15 @@ npm run build
 - [ ] Sound
 - [ ] Power ups
 
+#### Demo
+
+- [ ] QR Code
+- [ ] Basic script
+- [ ] Video
+
+
+
+
+
+
+

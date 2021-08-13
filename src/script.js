@@ -11,10 +11,10 @@ import cannonDebugger from 'cannon-es-debugger'
  * Base
  */
 
-const gui = new dat.GUI({
-  width: 400,
-})
-const debugObject = {}
+// const gui = new dat.GUI({
+//   width: 400,
+// })
+// const debugObject = {}
 
 let clock = new THREE.Clock(),
   scene,
@@ -56,11 +56,11 @@ let clock = new THREE.Clock(),
   courseWidth = 6,
   characterSpeed = 6
 
-init()
-animate()
-
 let body = document.querySelector('body')
 let gesture = Hammer(body)
+
+init()
+animate()
 
 function init() {
   canvas = document.querySelector('canvas.webgl')
@@ -159,7 +159,6 @@ function init() {
     character = gltf.scene
 
     gltfLoader.load('animations.glb', (anim) => {
-      console.log(anim)
       mixer = new THREE.AnimationMixer(gltf.scene.children[0])
       runAnim = mixer.clipAction(anim.animations[2])
       idleAnim = mixer.clipAction(anim.animations[1])
@@ -328,7 +327,6 @@ function init() {
   })
 
   characterBody.addEventListener('collide', (event) => {
-    console.log(event.body)
     if (start) {
       if (event.body === floorBody) {
         inAir = false
@@ -397,21 +395,21 @@ function init() {
   renderer.outputEncoding = THREE.sRGBEncoding
   renderer.shadowMap.enabled = true
 
-  debugObject.createPoo = () => {
-    createPoo()
-  }
+  // debugObject.createPoo = () => {
+  //   createPoo()
+  // }
 
-  debugObject.showBodies = () => {
-    cannonDebugger(scene, world.bodies)
-  }
+  // debugObject.showBodies = () => {
+  //   cannonDebugger(scene, world.bodies)
+  // }
 
-  debugObject.toggleSideview = () => {
-    sideview = !sideview
-  }
+  // debugObject.toggleSideview = () => {
+  //   sideview = !sideview
+  // }
 
-  gui.add(debugObject, 'createPoo')
-  gui.add(debugObject, 'showBodies')
-  gui.add(debugObject, 'toggleSideview')
+  // gui.add(debugObject, 'createPoo')
+  // gui.add(debugObject, 'showBodies')
+  // gui.add(debugObject, 'toggleSideview')
 
   window.addEventListener('resize', () => {
     // Update sizes

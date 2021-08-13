@@ -90,4 +90,5 @@ body {
 
 .dg.ac {
     z-index: 5 !important;
+    display: none;
 }
