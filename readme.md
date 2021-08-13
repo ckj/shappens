@@ -47,7 +47,8 @@ npm run build
 - [x] Foot colliders
 - [ ] Web workers
 - [ ] Impact Markers
-- [ ] Mobile
+- [x] Mobile
 - [ ] Leaderboard
+- [ ] Sound
 - [ ] Power ups
 

@@ -29,6 +29,7 @@ let clock = new THREE.Clock(),
   gameover,
   start,
   sideview,
+  fartNoise,
   characterBody,
   leftFootBody,
   rightFootBody,
@@ -190,6 +191,13 @@ function init() {
     clone.position.x = 1
     scene.add(clone)
   })
+
+  /**
+   * Sounds
+   */
+
+  fartNoise = new Audio('fartnoise.wav')
+  fartNoise.preload = 'auto'
 
   /**
    * Physics
@@ -625,7 +633,7 @@ function startGame() {
 }
 
 function endGame() {
-  console.log('You really stepped in it this time')
+  fartNoise.play()
   gameover = true
   characterBody.sleep()
   setTimeout(function () {
