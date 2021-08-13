@@ -6,6 +6,9 @@ import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js'
 import * as CANNON from 'cannon-es'
 import Hammer from 'hammerjs'
 import cannonDebugger from 'cannon-es-debugger'
+import * as Sentry from "@sentry/browser";
+import { Integrations } from "@sentry/tracing";
+
 
 /**
  * Base
@@ -15,6 +18,16 @@ import cannonDebugger from 'cannon-es-debugger'
 //   width: 400,
 // })
 // const debugObject = {}
+
+Sentry.init({
+  dsn: "https://9b006a9db9a54c2490c8f5cb02caee1a@o59216.ingest.sentry.io/5905944",
+  integrations: [new Integrations.BrowserTracing()],
+
+  // Set tracesSampleRate to 1.0 to capture 100%
+  // of transactions for performance monitoring.
+  // We recommend adjusting this value in production
+  tracesSampleRate: 1.0,
+});
 
 let clock = new THREE.Clock(),
   scene,

@@ -8,6 +8,8 @@
   "dependencies": {
     "@babel/core": "^7.14.6",
     "@babel/preset-env": "^7.14.7",
+    "@sentry/browser": "^6.11.0",
+    "@sentry/tracing": "^6.11.0",
     "babel-loader": "^8.2.2",
     "cannon-es": "^0.15.1",
     "cannon-es-debugger": "^0.1.4",
