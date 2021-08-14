@@ -17,6 +17,12 @@ body {
   background-image: linear-gradient(to top, #f794a4 15%, #fcc6a4 100%);
   font-family: 'Fredoka One', sans-serif;
   color: #fff;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  color: #fff;
 }
 
 .webgl {
@@ -36,6 +42,7 @@ body {
   background-color: #f794a4;
   opacity: 1;
   transition: 1s opacity;
+  pointer-events: none;
 }
 
 #loading-screen.fade-out {
@@ -76,19 +83,56 @@ body {
   left: 50%;
   margin-left: -190px;
   font-size: 140px;
-  text-shadow: 0 10px 20px rgba(0,0,0, .05);
+  text-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
   text-align: center;
-  line-height: .85;
-  z-index: -1 ;
+  line-height: 0.85;
+  z-index: -1;
 }
 
-#scoreboard span {
-    font-size: 14px;
-    font-weight: 600;
-    font-family: sans-serif;
+#controls {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+}
+
+.bottom-bar {
+  position: absolute;
+  bottom: 5px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+}
+
+.bottom-bar > div {
+  padding: 10px 15px;
+}
+
+#desktop-controls,
+#mobile-controls {
+  display: none;
+  gap: 4px;
+}
+
+#desktop-controls span,
+#mobile-controls span {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 1px 5px;
+  border-radius: 5px;
 }
 
 .dg.ac {
-    z-index: 5 !important;
-    display: none;
+  z-index: 5 !important;
+  display: none;
+}
+
+@media (max-width: 499px) {
+  .bottom-bar
+   {
+    flex-direction: column;
+    align-items: center
+  }
+  .bottom-bar > div {
+    justify-self: center;
+  }
 }

@@ -6,9 +6,8 @@ import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js'
 import * as CANNON from 'cannon-es'
 import Hammer from 'hammerjs'
 import cannonDebugger from 'cannon-es-debugger'
-import * as Sentry from "@sentry/browser";
-import { Integrations } from "@sentry/tracing";
-
+import * as Sentry from '@sentry/browser'
+import { Integrations } from '@sentry/tracing'
 
 /**
  * Base
@@ -20,14 +19,14 @@ import { Integrations } from "@sentry/tracing";
 // const debugObject = {}
 
 Sentry.init({
-  dsn: "https://9b006a9db9a54c2490c8f5cb02caee1a@o59216.ingest.sentry.io/5905944",
+  dsn: 'https://9b006a9db9a54c2490c8f5cb02caee1a@o59216.ingest.sentry.io/5905944',
   integrations: [new Integrations.BrowserTracing()],
 
   // Set tracesSampleRate to 1.0 to capture 100%
   // of transactions for performance monitoring.
   // We recommend adjusting this value in production
   tracesSampleRate: 1.0,
-});
+})
 
 let clock = new THREE.Clock(),
   scene,
@@ -39,6 +38,7 @@ let clock = new THREE.Clock(),
   mixer,
   last = 0,
   loaded,
+  mobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent),
   gameover,
   start,
   sideview,
@@ -67,15 +67,21 @@ let clock = new THREE.Clock(),
   jumpForce = 4,
   lateralForce = 100,
   courseWidth = 6,
-  characterSpeed = 6
-
-let body = document.querySelector('body')
-let gesture = Hammer(body)
+  characterSpeed = 6,
+  body = document.querySelector('body'),
+  gesture = Hammer(body)
 
 init()
 animate()
 
 function init() {
+  // Show proper controls
+  if (mobile) {
+    document.getElementById('mobile-controls').style.display = 'flex'
+  } else {
+    document.getElementById('desktop-controls').style.display = 'flex'
+  }
+
   canvas = document.querySelector('canvas.webgl')
   scene = new THREE.Scene()
   {
@@ -116,8 +122,6 @@ function init() {
   // GLTF loader
   const gltfLoader = new GLTFLoader(loadingManager)
   gltfLoader.setDRACOLoader(dracoLoader)
-
-  // Shader
 
   /**
    * Textures
@@ -550,7 +554,7 @@ const getPlacement = () => {
 // Keyboard Input
 
 const handleKeyDown = (keyEvent) => {
-  if (!gameover) {
+  if (!gameover && !mobile) {
     if (keyEvent.key === ' ' || keyEvent.key === 'ArrowUp') {
       //jump
       jump = true
@@ -575,7 +579,7 @@ gesture.on(
   'panleft panright panup tap press',
   debounce(
     function (ev) {
-      if (!gameover) {
+      if (!gameover && mobile) {
         if (ev.type === 'tap') {
           jump = true
         }
@@ -675,6 +679,10 @@ function followPlayer(now) {
 
     const leftFootPosition = leftFoot.getWorldPosition(leftFootTarget)
     const rightFootPosition = rightFoot.getWorldPosition(rightFootTarget)
+
+    character.updateMatrix()
+    leftFoot.updateMatrix()
+    rightFoot.updateMatrix()
 
     leftFootBody.position.set(
       leftFootPosition.x,
