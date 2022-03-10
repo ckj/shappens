@@ -19,7 +19,7 @@ import { Integrations } from '@sentry/tracing'
 // const debugObject = {}
 
 Sentry.init({
-  dsn: "https://90a698c107fb4daca944ea3e670dbd06@o87286.ingest.sentry.io/6250261",
+  dsn: "https://e079d168ef4440ddb966ad599785cd3b@o87286.ingest.sentry.io/6251992",
   integrations: [new Integrations.BrowserTracing()],
 
   // Set tracesSampleRate to 1.0 to capture 100%
