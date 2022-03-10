@@ -16,7 +16,8 @@ module.exports = merge(
                 ignore: ['node_modules', 'webpack.config.js'],
                 configFile: 'sentry.properties',
                 setCommits: {
-                    auto: true
+                    auto: true,
+                    ignoreMissing: true
                 }
             })
         ]
