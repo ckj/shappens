@@ -17,7 +17,8 @@ module.exports = merge(
                 configFile: 'sentry.properties',
                 setCommits: {
                     auto: true,
-                    ignoreMissing: true
+                    ignoreMissing: true,
+                    ignoreEmpty: true,
                 }
             })
         ]
