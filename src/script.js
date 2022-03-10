@@ -19,7 +19,7 @@ import { Integrations } from '@sentry/tracing'
 // const debugObject = {}
 
 Sentry.init({
-  dsn: 'https://9b006a9db9a54c2490c8f5cb02caee1a@o59216.ingest.sentry.io/5905944',
+  dsn: "https://90a698c107fb4daca944ea3e670dbd06@o87286.ingest.sentry.io/6250261",
   integrations: [new Integrations.BrowserTracing()],
 
   // Set tracesSampleRate to 1.0 to capture 100%
@@ -654,6 +654,7 @@ function endGame() {
   fartNoise.play()
   gameover = true
   characterBody.sleep()
+  myUndefinedFunction();
   setTimeout(function () {
     resetGame()
     startGame()
